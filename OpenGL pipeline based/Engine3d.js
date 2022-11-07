@@ -5,6 +5,7 @@ class Engine3d {
         this.timeStart = 0
 
         this.cube = this.makeCubeMesh()
+        this.vCamera = new Vec3d(0,0,0)
     }
 
     makeCubeMesh(){
@@ -40,74 +41,124 @@ class Engine3d {
         }
         
         let cube =  new Mesh(triangles)
-        console.log(cube)
+        // console.log(cube)
         return cube
     }
 
-    drawTriangles(ctx, fTheta){
+    drawTriangles(ctx, fTheta, object){
+        let mesh = object
+
         let rotMatrices = Matrix.getRotationMatrices(fTheta)
         let rotMatZ = rotMatrices[0]
         let rotMatX = rotMatrices[1]
+        console.log(rotMatZ, rotMatX)
 
-        for(let i=0; i<this.cube.triangles.length; i++){
+        for(let i=0; i<mesh.triangles.length; i++){
             let triangleProjected = new Triangle()
             let triangleRotatedZ  = new Triangle()
             let triangleRotatedZX = new Triangle()
 
-            let triangleTranslated = JSON.parse(JSON.stringify(this.cube.triangles[i]))  //because for some motherfucking reason thing before is fucking shallow copy, and references values in original arr
+            let triangleTranslated = JSON.parse(JSON.stringify(mesh.triangles[i]))  //because for some motherfucking reason thing before is fucking shallow copy, and references values in original arr
+            //rotate in Z axis
             triangleRotatedZ.vec[0] = Matrix.MultiplyMatrixVector(triangleTranslated.vec[0], rotMatZ)
             triangleRotatedZ.vec[1] = Matrix.MultiplyMatrixVector(triangleTranslated.vec[1], rotMatZ)
             triangleRotatedZ.vec[2] = Matrix.MultiplyMatrixVector(triangleTranslated.vec[2], rotMatZ)
-            
+            //rotate in X axis
             triangleRotatedZX.vec[0] = Matrix.MultiplyMatrixVector(triangleRotatedZ.vec[0], rotMatX)
             triangleRotatedZX.vec[1] = Matrix.MultiplyMatrixVector(triangleRotatedZ.vec[1], rotMatX)
-            triangleRotatedZX.vec[2] = Matrix.MultiplyMatrixVector(triangleRotatedZ.vec[2], rotMatX)
+            triangleRotatedZX.vec[2] = Matrix.MultiplyMatrixVector(triangleRotatedZ.vec[2], rotMatX)            
 
 
 
             let triTranslated = triangleRotatedZX.vec
+            //offset into the screen
             triTranslated[0].z = triTranslated[0].z + 3
             triTranslated[1].z = triTranslated[1].z + 3 
             triTranslated[2].z = triTranslated[2].z + 3
 
-            let v1 = Matrix.MultiplyMatrixVector(triTranslated[0], Matrix.projectionMatrix)
-            let v2 = Matrix.MultiplyMatrixVector(triTranslated[1], Matrix.projectionMatrix)
-            let v3 = Matrix.MultiplyMatrixVector(triTranslated[2], Matrix.projectionMatrix)
+            //getting crossproduct, to get a normal----------------------------------------------
+            let normal = new Vec3d()
+            let line1 = new Vec3d()
+            let line2 = new Vec3d()
+            line1.x = triTranslated[1].x - triTranslated[0].x
+            line1.y = triTranslated[1].y - triTranslated[0].y
+            line1.z = triTranslated[1].z - triTranslated[0].z
 
-            triangleProjected.vec = [v1, v2, v3]
-            //---------
-
-            //before depth added 
-            // let v1 = Matrix.MultiplyMatrixVector(this.cube.triangles[i].vec[0])
-            // let v2 = Matrix.MultiplyMatrixVector(this.cube.triangles[i].vec[1])
-            // let v3 = Matrix.MultiplyMatrixVector(this.cube.triangles[i].vec[2])
-            //---------
-            // let triangleProjected = new Triangle()
-
-
-            triangleProjected.vec[0].x += 1
-            triangleProjected.vec[1].x += 1
-            triangleProjected.vec[2].x += 1
-            triangleProjected.vec[0].y += 1
-            triangleProjected.vec[1].y += 1
-            triangleProjected.vec[2].y += 1
+            line2.x = triTranslated[2].x - triTranslated[0].x
+            line2.y = triTranslated[2].y - triTranslated[0].y
+            line2.z = triTranslated[2].z - triTranslated[0].z
             
-            triangleProjected.vec[0].x *= 0.5*window.innerWidth
-            triangleProjected.vec[1].x *= 0.5*window.innerWidth
-            triangleProjected.vec[2].x *= 0.5*window.innerWidth
-            triangleProjected.vec[0].y *= 0.5*window.innerHeight
-            triangleProjected.vec[1].y *= 0.5*window.innerHeight
-            triangleProjected.vec[2].y *= 0.5*window.innerHeight
-            
-            triangleProjected.draw(ctx)
+            //crossproduct
+            normal.x = line1.y*line2.z - line1.z*line2.y
+            normal.y = line1.z*line2.x - line1.x*line2.z
+            normal.z = line1.x*line2.y - line1.y*line2.x
 
-            console.log(triangleProjected.vec)
+            let len = Math.sqrt(normal.x*normal.x + normal.y*normal.y + normal.z*normal.z)
+            normal.x /= len
+            normal.y /= len
+            normal.z /= len
+            //----------------------------------------------------------------------------------
+
+            //draw only visible faces (dot product between normal and triTranslated-camera)
+            // if(normal.z < 0)
+            if(normal.x * (triTranslated[0].x - this.vCamera.x) +
+               normal.y * (triTranslated[0].y - this.vCamera.y) +
+               normal.z * (triTranslated[0].z - this.vCamera.z) < 0)
+               {
+                //illumination------------------------- wont be needed after, for the game coding, but ill add it cuz i can 
+                //light direction normal
+                let lightDirection = new Vec3d(0,0,-1)
+                let l = Math.sqrt(lightDirection.x*lightDirection.x + lightDirection.y*lightDirection.y + lightDirection.z*lightDirection.z)
+                lightDirection.x /= l
+                lightDirection.y /= l
+                lightDirection.z /= l
+
+                let dotProduct = normal.x*lightDirection.x + normal.y*lightDirection.y + normal.z*lightDirection.z
+                // console.log(dotProduct, 'dotproduct color')
+                //---------------------------------------------------------------------------------------------------------
+
+                // console.log(triTranslated, 'tritranslated', )
+                //project triangles from 3D ---> 2D
+                let v1 = Matrix.MultiplyMatrixVector(triTranslated[0], Matrix.projectionMatrix)
+                let v2 = Matrix.MultiplyMatrixVector(triTranslated[1], Matrix.projectionMatrix)
+                let v3 = Matrix.MultiplyMatrixVector(triTranslated[2], Matrix.projectionMatrix)
+                // console.log(v1, v2, v3, 'chuj');
+                triangleProjected.vec = [v1, v2, v3]
+    
+                //scale into view--------------------------------------
+                triangleProjected.vec[0].x += 1
+                triangleProjected.vec[1].x += 1
+                triangleProjected.vec[2].x += 1
+                triangleProjected.vec[0].y += 1
+                triangleProjected.vec[1].y += 1
+                triangleProjected.vec[2].y += 1
+                
+                triangleProjected.vec[0].x *= 0.5*window.innerWidth
+                triangleProjected.vec[1].x *= 0.5*window.innerWidth
+                triangleProjected.vec[2].x *= 0.5*window.innerWidth
+                triangleProjected.vec[0].y *= 0.5*window.innerHeight
+                triangleProjected.vec[1].y *= 0.5*window.innerHeight
+                triangleProjected.vec[2].y *= 0.5*window.innerHeight
+                //-----------------------------------------------------
+
+                triangleProjected.fill(ctx, dotProduct) //change to .draw(ctx) to see outlines only
+                triangleProjected.draw(ctx)             //used to see the outlines of triangles clearly
+
+                // console.log(triangleProjected.vec)
+            }
+
         }
     }
 
     render(time){
         let ctx = this.ctx
         ctx.clearRect(0,0, window.innerWidth, window.innerHeight)
+        ctx.fillStyle = 'black'
+        ctx.fillRect(0,0,window.innerWidth, window.innerHeight)
+        
+        // ctx.globalAlpha = 1
+        // ctx.fillStyle = 'white'
+
         let fTheta = 0
         
         if(this.time == 0) {
@@ -116,11 +167,12 @@ class Engine3d {
         }
         else fTheta = (((time - this.timeStart))/30)
         this.time = time
-        console.log(fTheta, 'dupa')
+        // console.log(fTheta, 'dupa')
 
-        this.drawTriangles(ctx, fTheta)
+        // this.drawTriangles(ctx, fTheta, this.cube)
+        this.drawTriangles(ctx, 130, bolidMesh)
 
-        console.log(this.cube.triangles)
-        console.log('here')
+        // console.log(this.cube.triangles)
+        // console.log('here')
     }
 }

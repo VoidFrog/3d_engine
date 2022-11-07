@@ -21,6 +21,19 @@ class Triangle {
         }
         ctx.stroke()
     }
+
+    //dp - dotproduct, determines color intensity
+    fill(ctx, dp){
+        //light from camera to item
+        ctx.fillStyle = `rgba(255,255,255, ${dp})`
+
+        ctx.beginPath()
+        ctx.moveTo(this.vec[2].x, this.vec[2].y)
+        for(let i=0; i<this.vec.length; i++){
+            ctx.lineTo(this.vec[i].x, this.vec[i].y)
+        }
+        ctx.fill() 
+    }
 }
 
 //takes Array<Triangle> 
