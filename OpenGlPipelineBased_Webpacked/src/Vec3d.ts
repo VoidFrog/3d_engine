@@ -67,22 +67,18 @@ export default class Vec3d {
         return this.add_vectors(lineStart, lineToIntersect)
     }
 
-    static triangleClipAgainstPlane(plane_p:Vec3d, plane_n:Vec3d, in_triangle:Triangle){
-        let out_triangle1 = new Triangle()
-        out_triangle1.dp = in_triangle.dp
-        let out_triangle2 = new Triangle()
-        out_triangle2.dp = in_triangle.dp
+    static triangleClipAgainstPlane(plane_p:Vec3d, plane_n:Vec3d, in_triangle:Triangle, outTriangles:Triangle[]):number{
         plane_n = this.vector_normalise(plane_n)
 
         //shortest distance from plane to point
         //used for distinguishing on which side the given point is placed 
         let distance = (p:Vec3d):number => {
-            let n = this.vector_normalise(p)
-            return (plane_n.x*n.x + plane_n.y*n.y, plane_n.z*n.z - this.dot_product(plane_n, plane_p))
+            // let n = this.vector_normalise(p)
+            return (plane_n.x*p.x + plane_n.y*p.y + plane_n.z*p.z - this.dot_product(plane_n, plane_p))
         }
 
-        let inside_points:Vec3d[] = new Array(3)
-        let outside_points:Vec3d[] = new Array(3)
+        let inside_points:Vec3d[] = []
+        let outside_points:Vec3d[] = []
         let nInsidePointCount:number = 0
         let nOutsidePointCount:number = 0
 
@@ -90,63 +86,48 @@ export default class Vec3d {
         let d1 = distance(in_triangle.points[1])
         let d2 = distance(in_triangle.points[2])
 
-        if(d0 >= 0){
-            inside_points[nInsidePointCount] = in_triangle.points[0]
-            nInsidePointCount += 1
-        } 
-        else{
-            outside_points[nOutsidePointCount] = in_triangle.points[0]
-            nOutsidePointCount += 1
-        } 
-        if(d1 >= 0){
-            inside_points[nInsidePointCount] = in_triangle.points[1]
-            nInsidePointCount += 1 
-        }
-        else{
-            outside_points[nOutsidePointCount] = in_triangle.points[1]
-            nOutsidePointCount += 1
-        } 
-        if(d2 >= 0){
-            inside_points[nInsidePointCount] = in_triangle.points[2]
-            nInsidePointCount += 1 
-        } 
-        else{
-            outside_points[nOutsidePointCount] = in_triangle.points[2]        
-            nOutsidePointCount += 1 
-        }
+        if (d0 >= 0)  inside_points[nInsidePointCount++] = in_triangle.points[0]; 
+		else  outside_points[nOutsidePointCount++] = in_triangle.points[0]; 
+		if (d1 >= 0)  inside_points[nInsidePointCount++] = in_triangle.points[1]; 
+		else  outside_points[nOutsidePointCount++] = in_triangle.points[1]; 
+		if (d2 >= 0)  inside_points[nInsidePointCount++] = in_triangle.points[2]; 
+		else  outside_points[nOutsidePointCount++] = in_triangle.points[2]; 
 
-        if(nInsidePointCount == 0) return {nClippedTriangles:0, clipped:[]}
+        if(nInsidePointCount == 0) return 0
         if(nInsidePointCount == 3){
-            out_triangle1.points = in_triangle.points
-            return {nClippedTriangles:1, clipped:[out_triangle1]}
+            outTriangles[0] = in_triangle
+            return 1
         }
         if(nInsidePointCount == 1 && nOutsidePointCount == 2){
-            out_triangle1.dp = in_triangle.dp
-            out_triangle1.color = 'rgb(0,255,0)'
+            outTriangles[0] = new Triangle()
+            outTriangles[0].color = 'rgb(0,255,0)'
+            outTriangles[0].dp = in_triangle.dp
+
             
-            out_triangle1.points[0] = inside_points[0]
-
-            out_triangle1.points[1] = this.vector_intersect_plane(plane_p, plane_n, inside_points[0], outside_points[0])
-            out_triangle1.points[2] = this.vector_intersect_plane(plane_p, plane_n, inside_points[0], outside_points[1])
-
-            return {nClippedTriangles:1, clipped:[out_triangle1]}
+            outTriangles[0].points[0] = inside_points[0]
+            outTriangles[0].points[1] = this.vector_intersect_plane(plane_p, plane_n, inside_points[0], outside_points[0])
+            outTriangles[0].points[2] = this.vector_intersect_plane(plane_p, plane_n, inside_points[0], outside_points[1])
+            return 1
         }
-        if(nInsidePointCount == 2 && nOutsidePointCount == 1){
-            out_triangle1.dp = in_triangle.dp
-            out_triangle2.dp = in_triangle.dp
-            out_triangle1.color = 'rgb(255,0,0)'
-            out_triangle2.color = 'rgb(0,0,255)'
-            console.log('pizda')
-        
-            out_triangle1.points[0] = inside_points[0]
-            out_triangle1.points[1] = inside_points[1]
-            out_triangle1.points[2] = this.vector_intersect_plane(plane_p, plane_n, inside_points[0], outside_points[0])
-
-            out_triangle2.points[0] = inside_points[1]
-            out_triangle2.points[1] = out_triangle1.points[2]
-            out_triangle2.points[2] = this.vector_intersect_plane(plane_p, plane_n, inside_points[1], outside_points[0])
+        if(nInsidePointCount == 2 && nOutsidePointCount == 1){ //if(nInsidePointCount == 2 && nOutsidePointCount == 1)
+            outTriangles[0] = new Triangle()
+            outTriangles[1] = new Triangle()
             
-            return {nClippedTriangles:2, clipped:[out_triangle1, out_triangle2]}
+            outTriangles[0].color = 'rgb(255,0,0)'
+            outTriangles[1].color = 'rgb(0,0,255)'
+
+            outTriangles[0].dp = in_triangle.dp
+            outTriangles[1].dp = in_triangle.dp
+
+        
+            outTriangles[0].points[0] = inside_points[0]
+            outTriangles[0].points[1] = inside_points[1]
+            outTriangles[0].points[2] = this.vector_intersect_plane(plane_p, plane_n, inside_points[0], outside_points[0])
+        
+            outTriangles[1].points[0] = inside_points[1]
+            outTriangles[1].points[1] = outTriangles[0].points[2]
+            outTriangles[1].points[2] = this.vector_intersect_plane(plane_p, plane_n, inside_points[1], outside_points[0])
+            return 2
         }
 
     }

@@ -40,14 +40,14 @@ export default class CameraControls {
         if(this.down) this.engine.vCamera.y -= 0.1
         if(this.left) this.engine.vCamera.x += 0.1
         if(this.right) this.engine.vCamera.x -= 0.1
-        console.log(this.engine.fYaw)
+        // console.log(this.engine.fYaw)
     }
 
     enable(){
         window.addEventListener('keydown', (e) => {
             let key = e.key
             key = key.toLowerCase()
-            console.log(key)
+            // console.log(key)
 
             if(key == 'w') this.w = true
             if(key == 's') this.s = true

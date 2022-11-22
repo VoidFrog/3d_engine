@@ -138,16 +138,17 @@ export default class Engine3d {
                 triangleViewed.points[2] = Matrix.multiplyMatrixVector(triTranslated[2], viewMatrix)
 
                 //may end up with more than one triangle so i'll need to loop through them at the projection time
-                let {nClippedTriangles, clipped} = Vec3d.triangleClipAgainstPlane(new Vec3d(0,0,0.01), new Vec3d(0,0,1), triangleViewed)
+                let outTriangles:Triangle[] = [new Triangle(), new Triangle()]
+                let nClippedTriangles = Vec3d.triangleClipAgainstPlane(new Vec3d(0,0,0.01), new Vec3d(0,0,1), triangleViewed, outTriangles)
                 
                 // console.log(nClippedTriangles);
                 
                 //project triangles from 3D ---> 2D
                 for(let i=0; i<nClippedTriangles; i++){
-                    triangleProjected = clipped[i]
-                    triangleProjected.points[0] = Matrix.multiplyMatrixVector(clipped[i].points[0], Matrix.projectionMatrix)
-                    triangleProjected.points[1] = Matrix.multiplyMatrixVector(clipped[i].points[1], Matrix.projectionMatrix)
-                    triangleProjected.points[2] = Matrix.multiplyMatrixVector(clipped[i].points[2], Matrix.projectionMatrix)
+                    triangleProjected = outTriangles[i]
+                    triangleProjected.points[0] = Matrix.multiplyMatrixVector(outTriangles[i].points[0], Matrix.projectionMatrix)
+                    triangleProjected.points[1] = Matrix.multiplyMatrixVector(outTriangles[i].points[1], Matrix.projectionMatrix)
+                    triangleProjected.points[2] = Matrix.multiplyMatrixVector(outTriangles[i].points[2], Matrix.projectionMatrix)
     
                     triangleProjected.points[0] = Vec3d.div_vectors(triangleProjected.points[0], triangleProjected.points[0].w)
                     triangleProjected.points[1] = Vec3d.div_vectors(triangleProjected.points[1], triangleProjected.points[1].w)
@@ -188,12 +189,8 @@ export default class Engine3d {
         // console.log(trianglesToRaster)
 
         for(let i=0; i<trianglesToRaster.length; i++){
-
-            // trianglesToRaster[i].fill(ctx) //change to .draw(ctx) to see outlines only
-            // trianglesToRaster[i].draw(ctx) //used to see the outlines of triangles clearly
-            
             let triangleList:Triangle[] = []
-            let clippedTrianglesArray:Triangle[] = []
+            let clippedTriangles:Triangle[] = new Array(2)
 
             triangleList.push(trianglesToRaster[i])
             let nNewTriangles = 1
@@ -203,46 +200,33 @@ export default class Engine3d {
                  
                 while(nNewTriangles > 0){
                     let test:Triangle = triangleList.shift()
-                    // console.log(test.color, 'dupa')
                     nNewTriangles -= 1
 
-                    let clipped:Triangle[];
-                    let nClippedTriangles:number;
-                    let destructured;
                     switch(p){
                         case 0:
-                            destructured = {nClippedTriangles, clipped} = Vec3d.triangleClipAgainstPlane(new Vec3d(0,0,0), new Vec3d(0,1,0), test)
-                            nTrianglesToAdd = nClippedTriangles
-                            clippedTrianglesArray = clipped
+                            nTrianglesToAdd = Vec3d.triangleClipAgainstPlane(new Vec3d(0,0,0), new Vec3d(0,1,0), test, clippedTriangles)
                             break
                         case 1:
-                            destructured = {nClippedTriangles, clipped} = Vec3d.triangleClipAgainstPlane(new Vec3d(0,window.innerHeight-1,0), new Vec3d(0,-1,0), test)
-                            nTrianglesToAdd = nClippedTriangles
-                            clippedTrianglesArray = clipped
+                            nTrianglesToAdd = Vec3d.triangleClipAgainstPlane(new Vec3d(0,window.innerHeight-1,0), new Vec3d(0,-1,0), test, clippedTriangles)
                             break
                         case 2:
-                            destructured = {nClippedTriangles, clipped} = Vec3d.triangleClipAgainstPlane(new Vec3d(0,0,0), new Vec3d(1,0,0), test)
-                            nTrianglesToAdd = nClippedTriangles
-                            clippedTrianglesArray = clipped
+                            nTrianglesToAdd = Vec3d.triangleClipAgainstPlane(new Vec3d(0,0,0), new Vec3d(1,0,0), test, clippedTriangles)
                             break
                         case 3:
-                            destructured = {nClippedTriangles, clipped} = Vec3d.triangleClipAgainstPlane(new Vec3d(window.innerWidth-1,0,0), new Vec3d(-1,0,0), test)
-                            nTrianglesToAdd = nClippedTriangles
-                            clippedTrianglesArray = clipped
+                            nTrianglesToAdd = Vec3d.triangleClipAgainstPlane(new Vec3d(window.innerWidth-1,0,0), new Vec3d(-1,0,0), test, clippedTriangles) 
                             break
                     }
+                    // if(nTrianglesToAdd == 2) console.log(nTrianglesToAdd, clippedTriangles)
 
                     // console.log(clipped);
-                    
-
                     for(let w=0; w<nTrianglesToAdd; w++){
-                        triangleList.push(clippedTrianglesArray[w])
+                        // if(clippedTriangles[w].color)console.log(clippedTriangles[w].color);
+                        triangleList.push(clippedTriangles[w])
                     }
                 }
                 nNewTriangles = triangleList.length
             }
             
-            // console.log(triangleList.length)
             for(let n=0; n<triangleList.length; n++){
                 // triangleList[n].color = 'rgb(0,0,255)'
                 triangleList[n].fill(ctx) //change to .draw(ctx) to see outlines only
@@ -258,7 +242,7 @@ export default class Engine3d {
 
     render(time:number){
         let ctx = this.ctx
-        ctx.clearRect(0,0, window.innerWidth, window.innerHeight)
+        // ctx.clearRect(0,0, window.innerWidth, window.innerHeight)
         ctx.fillStyle = 'black'
         ctx.fillRect(0,0,window.innerWidth, window.innerHeight)
         

@@ -11,17 +11,15 @@ function main(){
 
     let engine = new Engine3d(ctx)
     engine.addMesh(f1Model())
-    // engine.addMesh(mountains())
+    engine.addMesh(mountains())
     
     let controls = new CameraControls(engine)
     controls.enable()
 
-
     setInterval(() => {
         let time = Date.now()
-        engine.render(time)
-
         controls.move()
+        engine.render(time)
     }, 1000/50)
 }
 

@@ -26,9 +26,19 @@ export default class Triangle {
     //dp - dotproduct, determines color intensity
     fill(ctx:CanvasRenderingContext2D, ){
         //light from camera to item
-        if(this.color != '') ctx.fillStyle = this.color
+        if(this.color != ''){
+            let color = this.color.replaceAll('rgb(', '')
+            color = color.replaceAll(')', '')
+            let rgb = color.split(',')
+            let rgb_nums = rgb.map((val) => Number(val))
+
+            ctx.fillStyle = `rgb(${rgb_nums[0]*this.dp}, ${rgb_nums[1]*this.dp}, ${rgb_nums[2]*this.dp})`
+
+        }
         else ctx.fillStyle = `rgb(${this.dp*255},${this.dp*255},${this.dp*255})`
 
+        if(this.dp == 0) console.log(this.dp, 'o kurwa zero')
+        
         ctx.beginPath()
         ctx.moveTo(this.points[2].x, this.points[2].y)
         for(let i=0; i<this.points.length; i++){
