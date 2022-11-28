@@ -1,7 +1,7 @@
 vertices = []
 faces = []
 
-with open('./OpenGlPipelineBased_Webpacked/models/mountains.obj', encoding = 'utf-8') as f:
+with open('./OpenGlPipelineBased_Webpacked/models/map.obj', encoding = 'utf-8') as f:
     for line in f:
         if line[0] == 'v':
             line = line.replace('\n', '')
@@ -24,5 +24,5 @@ str_vertices = str_vertices.replace(' ', '')
 str_faces = str(faces)
 str_faces = str_faces.replace(' ', '')
 print(str_faces)
-# print(str_vertices)
+print(str_vertices)
 print('blablabla;')

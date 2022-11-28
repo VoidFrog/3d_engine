@@ -1,6 +1,7 @@
 import Engine3d from './Engine3d'
-import { f1Model, mountains } from './ModelLoader'
-import CameraControls from './Controls'
+import { f1Model, mountains, map } from './ModelLoader'
+import Vec3d from './Vec3d'
+import Game from './Game'
 
 function main(){
     let canvas = document.getElementById('root') as HTMLCanvasElement
@@ -9,18 +10,27 @@ function main(){
     canvas.width = window.innerWidth
     canvas.height = window.innerHeight
 
+    // Vec3d.clippingDebug = true    //enable this if you want to see the clipped triangles colored
     let engine = new Engine3d(ctx)
-    engine.addMesh(f1Model())
-    engine.addMesh(mountains())
+    engine.setPlayerMesh(f1Model())
+    engine.setMapMesh(map())         //MAP HAS 500width AND 500height
     
-    let controls = new CameraControls(engine)
-    controls.enable()
+    // let controls = new CameraControls(game.engine)
+    let game = new Game(engine)
+    game.makeCameraControl()
+    game.enableCameraControl()  //add true if you want to add movement
+    game.createPlayerControls() //created and enabled
 
-    setInterval(() => {
+    // engine.addMesh(mountains())
+
+    const render = () => {
         let time = Date.now()
-        controls.move()
-        engine.render(time)
-    }, 1000/50)
+        game.ControlsTick() //uses camera and object controls
+        game.tick(time)
+
+        window.requestAnimationFrame(render)
+    }
+    window.requestAnimationFrame(render)
 }
 
 main()

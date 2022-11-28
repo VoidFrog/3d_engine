@@ -107,7 +107,6 @@ export default class Matrix {
 
         return m
     }
-
     //get rotation matrices of a given angle
     static getRotationMatriceX(fTheta:number){
         let fThetaRad = fTheta * Math.PI/180

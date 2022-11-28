@@ -43,16 +43,18 @@ export default class CameraControls {
         // console.log(this.engine.fYaw)
     }
 
-    enable(){
+    enable(movement:boolean){
         window.addEventListener('keydown', (e) => {
             let key = e.key
             key = key.toLowerCase()
             // console.log(key)
 
-            if(key == 'w') this.w = true
-            if(key == 's') this.s = true
-            if(key == 'a') this.a = true
-            if(key == 'd') this.d = true
+            if(movement){
+                if(key == 'w') this.w = true
+                if(key == 's') this.s = true
+                if(key == 'a') this.a = true
+                if(key == 'd') this.d = true
+            }
             
             if(key == 'arrowup') this.up = true
             if(key == 'arrowdown') this.down = true

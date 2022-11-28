@@ -15,6 +15,8 @@ export default class Engine3d {
     fYaw:number; //rotation around Y axis of camera looking direction
 
     meshes:Mesh[];
+    mapMesh:Mesh;
+    playerMesh:Mesh;
 
     constructor(ctx:CanvasRenderingContext2D){
         this.meshes = []
@@ -24,7 +26,7 @@ export default class Engine3d {
         this.fYaw = 0
 
         // this.cube = this.makeCubeMesh()
-        this.vCamera = new Vec3d(0,0,0)
+        this.vCamera = new Vec3d(0,5,16)//new Vec3d(0,5,3)
         this.vLookDirection = new Vec3d(0,0,1)
 
     }
@@ -52,7 +54,7 @@ export default class Engine3d {
         for(let i=0; i<vertices.length; i++){
             let vectors3d:Vec3d[] = []
             for(let j=0; j<vertices[i].length; j+=3){
-                let vector = new Vec3d(vertices[i][j], vertices[i][j+1], vertices[i][j+2])
+                let vector = new Vec3d(10*vertices[i][j], 10*vertices[i][j+1], 10*vertices[i][j+2])
                 vectors3d.push(vector)
             }
 
@@ -72,16 +74,28 @@ export default class Engine3d {
                 allTriangles.push(triangle)
             }
         }
+        for(let triangle of this.playerMesh.triangles){
+            allTriangles.push(triangle)
+        }
+
         return allTriangles
     }
 
-    drawTriangles(fTheta:number){
-        const ctx:CanvasRenderingContext2D = this.ctx 
+    setMapMesh(mesh:Mesh){
+        this.mapMesh = mesh
+    }
 
+    setPlayerMesh(mesh:Mesh){
+        this.playerMesh = mesh
+    }
+
+    drawTriangles(fTheta:number, drawMap:boolean=false){
+        const ctx:CanvasRenderingContext2D = this.ctx 
+        
         //setting up rotation and translation matrices------------------------------------
-        let rotationMatriceX = Matrix.getRotationMatriceX(fTheta-fTheta)
+        let rotationMatriceX = Matrix.getRotationMatriceX(fTheta-fTheta)                                                        //delete to make world SPIN!!!!
         // let rotationMatriceY = Matrix.getRotationMatriceY(fTheta)
-        let rotationMatriceZ = Matrix.getRotationMatriceZ(fTheta/2 - fTheta/2)
+        let rotationMatriceZ = Matrix.getRotationMatriceZ(fTheta/2 - fTheta/2)                                                  //delete to make world SPIN!!!!
 
         let translationMatrix = Matrix.getTranslationMatrix(0,0,16)
         let worldMatrix = Matrix.getIdentityMatrix()
@@ -94,22 +108,27 @@ export default class Engine3d {
         this.vLookDirection = Matrix.multiplyMatrixVector(vTarget, cameraRotationY)
         vTarget = Vec3d.add_vectors(this.vCamera, this.vLookDirection)
 
+        vTarget = Vec3d.add_vectors(this.vCamera, this.vLookDirection) //needed to offset camera behind the car model, and fix its position behind it
+
         let cameraMatrix = Matrix.matrixPointAt(this.vCamera, vTarget, vUp)
         let viewMatrix = Matrix.matrixQuickInverse(cameraMatrix) //this is our axis translation 
         //--------------------------------------------------------------------------------
-        let trianglesToDraw:Triangle[] = this.allTriangles()
+        let trianglesToDraw:Triangle[] = []
+        if(!drawMap) trianglesToDraw = this.allTriangles()
+        else trianglesToDraw = this.mapMesh.triangles
         let trianglesToRaster:Triangle[] = []
 
         for(let i=0; i<trianglesToDraw.length; i++){
             let triangleTransformed = new Triangle()
             let triangleProjected = new Triangle()
             let triangleViewed = new Triangle()
-
+            
             let triangleOriginal:Triangle = JSON.parse(JSON.stringify(trianglesToDraw[i]))  //because for some motherfucking reason thing before is fucking shallow copy, and references values in original arr
             triangleTransformed.points[0] = Matrix.multiplyMatrixVector(triangleOriginal.points[0], worldMatrix)
             triangleTransformed.points[1] = Matrix.multiplyMatrixVector(triangleOriginal.points[1], worldMatrix)
             triangleTransformed.points[2] = Matrix.multiplyMatrixVector(triangleOriginal.points[2], worldMatrix)
             let triTranslated = triangleTransformed.points
+            let originalColor = triangleOriginal.color
 
             //getting normal----------------------------------------------
             let normal:Vec3d;
@@ -174,6 +193,7 @@ export default class Engine3d {
                     triangleProjected.points[2].y *= 0.5*window.innerHeight
                     //------------------------------------------------------------------
                     triangleProjected.dp = dotProduct
+                    triangleProjected.color = originalColor
                     // if(triangleProjected.color != '') console.log(triangleProjected.color)
                     trianglesToRaster.push(triangleProjected)
                 }
@@ -221,6 +241,7 @@ export default class Engine3d {
                     // console.log(clipped);
                     for(let w=0; w<nTrianglesToAdd; w++){
                         // if(clippedTriangles[w].color)console.log(clippedTriangles[w].color);
+                        if(!Vec3d.clippingDebug) clippedTriangles[w].color = test.color
                         triangleList.push(clippedTriangles[w])
                     }
                 }
@@ -241,16 +262,7 @@ export default class Engine3d {
     }
 
     render(time:number){
-        let ctx = this.ctx
-        // ctx.clearRect(0,0, window.innerWidth, window.innerHeight)
-        ctx.fillStyle = 'black'
-        ctx.fillRect(0,0,window.innerWidth, window.innerHeight)
-        
-        // ctx.globalAlpha = 1
-        // ctx.fillStyle = 'white'
-
         let fTheta = 0
-        
         if(this.time == 0) {
             this.timeStart = time
             this.time = time
@@ -260,7 +272,7 @@ export default class Engine3d {
         // console.log(fTheta, 'dupa')
 
         // this.drawTriangles(ctx, fTheta, this.cube)
-
+        this.drawTriangles(fTheta, true) //renders map and then objects
         this.drawTriangles(fTheta)
         // console.log(this.cube.triangles)
         // console.log('here')

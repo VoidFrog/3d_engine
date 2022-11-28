@@ -15,6 +15,8 @@ export default class Vec3d {
         this.pos = [x, y, z, w]
     }
 
+    static clippingDebug = false
+
     static add_vectors(v1:Vec3d, v2:Vec3d):Vec3d{   
         return new Vec3d(v1.x+v2.x, v1.y+v2.y, v1.z+v2.z) 
     }
@@ -100,7 +102,7 @@ export default class Vec3d {
         }
         if(nInsidePointCount == 1 && nOutsidePointCount == 2){
             outTriangles[0] = new Triangle()
-            outTriangles[0].color = 'rgb(0,255,0)'
+            if(this.clippingDebug) outTriangles[0].color = 'rgb(0,255,0)'
             outTriangles[0].dp = in_triangle.dp
 
             
@@ -113,8 +115,10 @@ export default class Vec3d {
             outTriangles[0] = new Triangle()
             outTriangles[1] = new Triangle()
             
-            outTriangles[0].color = 'rgb(255,0,0)'
-            outTriangles[1].color = 'rgb(0,0,255)'
+            if(this.clippingDebug){
+                outTriangles[0].color = 'rgb(255,0,0)'
+                outTriangles[1].color = 'rgb(0,0,255)'
+            }
 
             outTriangles[0].dp = in_triangle.dp
             outTriangles[1].dp = in_triangle.dp
