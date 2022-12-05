@@ -9,6 +9,8 @@ export default class Game {
 
     constructor(engine:Engine3d){
         this.engine = engine
+
+        this.audioController()
     }
 
     makeCameraControl(){
@@ -26,8 +28,8 @@ export default class Game {
     }
 
     ControlsTick(){
-        this.cameraControls.move()
         this.playerControls.move()
+        this.cameraControls.move(this.playerControls.velocity)
     }
 
     tick(time:number){
@@ -38,15 +40,46 @@ export default class Game {
         ctx.font = "30px Arial";
         ctx.fillStyle = 'white'
         ctx.fillText("camera position:", 10, 50); 
-        ctx.fillText(`x: ${this.engine.vCamera.x}`, 10, 80); 
-        ctx.fillText(`y: ${this.engine.vCamera.y}`, 10, 110); 
-        ctx.fillText(`z: ${this.engine.vCamera.z}`, 10, 145); 
-        ctx.fillText(`tilt: ${this.playerControls.tilt}`, 10, 180); 
+        ctx.fillText(`x: ${(this.engine.vCamera.x).toFixed(3)}`, 10, 80); 
+        ctx.fillText(`y: ${(this.engine.vCamera.y).toFixed(3)}`, 10, 110); 
+        ctx.fillText(`z: ${(this.engine.vCamera.z).toFixed(3)}`, 10, 145); 
+        ctx.fillText(`velocity: ${this?.playerControls?.velocity ? (Math.abs(this?.playerControls.velocity.x)+ Math.abs(this?.playerControls.velocity.z)).toFixed(3): 0}`, 10, 175); 
+        ctx.fillText(`acceleration: ${this?.playerControls?.acceleration ? this?.playerControls.acceleration.toFixed(3) : 0}`, 10, 210); 
+        ctx.fillText(`tilt: ${this?.playerControls?.tilt ? this?.playerControls.tilt : 0}`, 10, 245); 
         
+        this.drawMovementVector(ctx)
+
+        ctx.fillStyle = 'black'
+        this.engine.render(time)
+    }
+    
+    audioController(){
+        if(true){
+            let engineRoarPath = 'audio/engine_roar.mp3'
+            let engineRoar = new Audio(engineRoarPath)
+            engineRoar.loop = true
+            engineRoar.volume = 0
+            engineRoar.play()
+            
+            let engineSoundPath = 'audio/Engine_speeding_up1.mp3'
+            let engineSound = new Audio(engineSoundPath)
+            engineSound.loop = true
+            engineSound.volume = 0
+            engineSound.play()
+            setInterval(() => {
+                // console.log(engineSound.currentTime)
+                engineRoar.volume = 0.4 * this.playerControls.acceleration + 0.2
+                engineSound.volume = 0.45*this.playerControls.acceleration + 0.05
+            }, 100)
+        }
+    }
+
+    drawMovementVector(ctx:CanvasRenderingContext2D){
+        if(!this.playerControls) return
         ctx.fillText(`Movement Vector:`, window.innerWidth-350, 50); 
-        ctx.fillText(`x: ${this.playerControls.currentMovementVector.x}`, window.innerWidth-120, 100); 
-        ctx.fillText(`y: ${this.playerControls.currentMovementVector.y}`, window.innerWidth-120, 150);
-        ctx.fillText(`z: ${this.playerControls.currentMovementVector.z}`, window.innerWidth-120, 200); 
+        ctx.fillText(`x: ${(this.playerControls.currentMovementVector.x).toFixed(3)}`, window.innerWidth-120, 100); 
+        ctx.fillText(`y: ${(this.playerControls.currentMovementVector.y).toFixed(3)}`, window.innerWidth-120, 150);
+        ctx.fillText(`z: ${(this.playerControls.currentMovementVector.z).toFixed(3)}`, window.innerWidth-120, 200); 
         let vec = {
             x:Number(this.playerControls.currentMovementVector.x.toFixed(3)),
             z:Number(this.playerControls.currentMovementVector.z.toFixed(3))
@@ -68,10 +101,6 @@ export default class Game {
         let xChange = ratioX*75
         ctx.lineTo(localStart.x+75+zChange, localStart.y+75-xChange)
         ctx.stroke()
-        
-
-        ctx.fillStyle = 'black'
-
-        this.engine.render(time)
     }
+
 }

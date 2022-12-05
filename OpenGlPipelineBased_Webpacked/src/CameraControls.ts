@@ -27,9 +27,9 @@ export default class CameraControls {
         this.engine = engine
     }
 
-    move(){
+    move(vForwardVelocity:Vec3d){
         let deltaTime = 30
-        let vForward = Vec3d.mul_vectors(this.engine.vLookDirection, 8/deltaTime)
+        let vForward = vForwardVelocity ? vForwardVelocity : Vec3d.mul_vectors(this.engine.vLookDirection, 8/deltaTime)
 
         if(this.w) this.engine.vCamera = Vec3d.add_vectors(this.engine.vCamera, vForward)
         if(this.s) this.engine.vCamera = Vec3d.sub_vectors(this.engine.vCamera, vForward)

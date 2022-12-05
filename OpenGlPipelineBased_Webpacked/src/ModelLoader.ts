@@ -32,6 +32,7 @@ const f1Model = () => {
 
     let vec3dArray:Vec3d[] = []
     let triangles:Triangle[] = []
+
     for(let i=0; i<vArray.length; i+=3){
         let x = Number(vArray[i])
         let y = Number(vArray[i+1])
@@ -122,7 +123,7 @@ const map = () => {
         let vec3dArray:Vec3d[] = []
         for(let i=0; i<vArray.length; i+=3){
             let x = Math.round(Number(vArray[i]) + 20*j)
-            let y = Math.round(Number(vArray[i+1])-2)
+            let y = Math.round(Number(vArray[i+1])-1.5)
             let z = Math.round(Number(vArray[i+2]) + 20*j)
             vec3dArray.push(new Vec3d(x, y, z))
         }

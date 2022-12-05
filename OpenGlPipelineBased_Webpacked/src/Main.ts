@@ -25,7 +25,9 @@ function main(){
 
     const render = () => {
         let time = Date.now()
-        game.ControlsTick() //uses camera and object controls
+        game.ControlsTick() //uses camera and object controls  || comment if you want to move around with camera only
+
+        // game.cameraControls.move() uncomment if you want to move camera around after disabling playerControls
         game.tick(time)
 
         window.requestAnimationFrame(render)
