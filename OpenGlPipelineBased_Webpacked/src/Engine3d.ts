@@ -2,6 +2,9 @@ import Mesh from "./Mesh";
 import Triangle from "./Triangle";
 import Vec3d from "./Vec3d";
 import Matrix from "./Matrix";
+import { pathLeft, pathMiddle, pathRight } from "./PathsForAi";
+import { botCar } from "./ModelLoader";
+
 
 export default class Engine3d {
     ctx:CanvasRenderingContext2D;
@@ -17,6 +20,14 @@ export default class Engine3d {
     meshes:Mesh[];
     mapMesh:Mesh;
     playerMesh:Mesh;
+    roadMesh:Mesh;
+    
+    showTriangleOutlines:boolean;
+
+    cubeX:number;
+    cubeZ:number;
+    pathPoint:number;
+    cubeMapPosition:number[];
 
     constructor(ctx:CanvasRenderingContext2D){
         this.meshes = []
@@ -25,13 +36,19 @@ export default class Engine3d {
         this.timeStart = 0
         this.fYaw = 0
 
+        this.cubeX = 0
+        this.cubeZ = 0
+        this.cubeMapPosition = []
+        this.pathPoint = 0
+
         // this.cube = this.makeCubeMesh()
         this.vCamera = new Vec3d(0,5,16)//new Vec3d(0,5,3)
         this.vLookDirection = new Vec3d(0,0,1)
+        this.showTriangleOutlines = false
 
     }
 
-    makeCubeMesh():Mesh {
+    makeCubeMesh(startingPoint:Vec3d):Mesh {
         //Array<Triangles>
         //-- Array<Vec3d>
         //-- -- Vec3d.pos --> [x,y,z]
@@ -50,18 +67,25 @@ export default class Engine3d {
             [1,0,1,   0,0,0,   1,0,0] //
         ]
 
+        for(let i=0; i<vertices.length; i++){
+           for(let j=0; j<vertices[i].length; j+=3){
+                vertices[i][j] += startingPoint.x
+                vertices[i][j+2] += startingPoint.z
+           }
+        }
+
         let triangles:Triangle[] = []
         for(let i=0; i<vertices.length; i++){
             let vectors3d:Vec3d[] = []
             for(let j=0; j<vertices[i].length; j+=3){
-                let vector = new Vec3d(10*vertices[i][j], 10*vertices[i][j+1], 10*vertices[i][j+2])
+                let vector = new Vec3d(vertices[i][j], vertices[i][j+1], vertices[i][j+2])
                 vectors3d.push(vector)
             }
 
             let triangle = new Triangle(vectors3d[0], vectors3d[1], vectors3d[2])
             triangles.push(triangle)
         }
-        
+
         let cube =  new Mesh(triangles)
         // console.log(cube)
         return cube
@@ -84,12 +108,84 @@ export default class Engine3d {
     setMapMesh(mesh:Mesh){
         this.mapMesh = mesh
     }
-
+    
     setPlayerMesh(mesh:Mesh){
         this.playerMesh = mesh
     }
+    
+    setRoadMesh(mesh:Mesh){
+        this.roadMesh = mesh
+    }
+    
+    moveToNextPoint(posX:number, posZ:number, path:Vec3d[], origin:Vec3d){
+        let prevPosition = this.pathPoint > 0 ? path[this.pathPoint-1] : path[path.length-1]
+        let currentDestination = path[this.pathPoint]
 
-    drawTriangles(fTheta:number, drawMap:boolean=false){
+        let dx = Math.abs(prevPosition.x - currentDestination.x)
+        let dz = Math.abs(prevPosition.z - currentDestination.z)
+
+        let velocity = 1/100
+        if (dx < 50 && dz < 50) velocity = 1/50
+        if(prevPosition.x < currentDestination.x){
+            posX += dx*velocity
+            this.cubeX += dx*velocity
+        }
+        else{
+            posX -= dx*velocity
+            this.cubeX -= dx*velocity
+        } 
+
+        if(prevPosition.z < currentDestination.z){
+            posZ += dz*velocity
+            this.cubeZ += dz*velocity
+        }
+        else{
+            posZ -= dz*velocity
+            this.cubeZ -= dz*velocity
+        }
+        
+        if((Math.round(posX) == currentDestination.x || Math.ceil(posX) == currentDestination.x || Math.floor(posX) == currentDestination.x) && (Math.round(posZ) == currentDestination.z || Math.ceil(posZ) == currentDestination.z || Math.floor(posZ) == currentDestination.z)){
+            this.pathPoint += 1
+            if(this.pathPoint > path.length-1) this.pathPoint = 1
+
+            //x + cubeX ~= currentDestination.x
+            // this.cubeX = 
+            // this.cubeZ = 
+            this.cubeX = currentDestination.x - origin.x
+            this.cubeZ = currentDestination.z - origin.z
+
+            console.log(posX, this.cubeX, currentDestination.x)
+            console.log(this.pathPoint, path.length-1)
+        }
+
+        // console.log(this.pathPoint, dx, dz, currentDestination.x, currentDestination.z, Math.round(posX), Math.round(posZ), posX)
+    }
+
+    showPath(fTheta:number){
+        let triangles:Triangle[] = []
+        let offsetted
+        let counter = 0
+
+        let path = pathRight
+        for(let point of path){
+            if(counter == 0){
+                offsetted = Vec3d.add_vectors(point, new Vec3d(this.cubeX, 0, this.cubeZ))
+                let cube = botCar(offsetted)
+                for(let i in cube.triangles){
+                    cube.triangles[i].color = 'rgb(204,204,0)'
+                }
+                triangles.push(...cube.triangles)
+                break
+            }
+            counter += 1 
+        }
+
+        this.cubeMapPosition = [offsetted.x, offsetted.z]
+        this.moveToNextPoint(offsetted.x, offsetted.z, path, path[0])
+        this.drawTriangles(fTheta, false, false, triangles)
+    }
+
+    drawTriangles(fTheta:number, drawMap:boolean=false, drawRoad:boolean=false, triangles:Triangle[]=[]){
         const ctx:CanvasRenderingContext2D = this.ctx 
         
         //setting up rotation and translation matrices------------------------------------
@@ -114,8 +210,10 @@ export default class Engine3d {
         let viewMatrix = Matrix.matrixQuickInverse(cameraMatrix) //this is our axis translation 
         //--------------------------------------------------------------------------------
         let trianglesToDraw:Triangle[] = []
-        if(!drawMap) trianglesToDraw = this.allTriangles()
-        else trianglesToDraw = this.mapMesh.triangles
+        if(!drawMap && !drawRoad && triangles.length == 0) trianglesToDraw = this.allTriangles()
+        else if(drawMap) trianglesToDraw = this.mapMesh.triangles
+        else if(drawRoad) trianglesToDraw = this.roadMesh.triangles
+        else if(triangles.length > 0) trianglesToDraw = triangles
         let trianglesToRaster:Triangle[] = []
 
         for(let i=0; i<trianglesToDraw.length; i++){
@@ -227,13 +325,13 @@ export default class Engine3d {
                             nTrianglesToAdd = Vec3d.triangleClipAgainstPlane(new Vec3d(0,0,0), new Vec3d(0,1,0), test, clippedTriangles)
                             break
                         case 1:
-                            nTrianglesToAdd = Vec3d.triangleClipAgainstPlane(new Vec3d(0,window.innerHeight-1,0), new Vec3d(0,-1,0), test, clippedTriangles)
+                            nTrianglesToAdd = Vec3d.triangleClipAgainstPlane(new Vec3d(0,window.innerHeight,0), new Vec3d(0,-1,0), test, clippedTriangles)
                             break
                         case 2:
                             nTrianglesToAdd = Vec3d.triangleClipAgainstPlane(new Vec3d(0,0,0), new Vec3d(1,0,0), test, clippedTriangles)
                             break
                         case 3:
-                            nTrianglesToAdd = Vec3d.triangleClipAgainstPlane(new Vec3d(window.innerWidth-1,0,0), new Vec3d(-1,0,0), test, clippedTriangles) 
+                            nTrianglesToAdd = Vec3d.triangleClipAgainstPlane(new Vec3d(window.innerWidth,0,0), new Vec3d(-1,0,0), test, clippedTriangles) 
                             break
                     }
                     // if(nTrianglesToAdd == 2) console.log(nTrianglesToAdd, clippedTriangles)
@@ -251,7 +349,7 @@ export default class Engine3d {
             for(let n=0; n<triangleList.length; n++){
                 // triangleList[n].color = 'rgb(0,0,255)'
                 triangleList[n].fill(ctx) //change to .draw(ctx) to see outlines only
-                triangleList[n].draw(ctx) //used to see the outlines of triangles clearly
+                if(this.showTriangleOutlines) triangleList[n].draw(ctx) //used to see the outlines of triangles clearly
             }
         }
 
@@ -272,8 +370,12 @@ export default class Engine3d {
         // console.log(fTheta, 'dupa')
 
         // this.drawTriangles(ctx, fTheta, this.cube)
-        this.drawTriangles(fTheta, true) //renders map and then objects
-        this.drawTriangles(fTheta)
+        this.drawTriangles(fTheta, true) //renders map 
+        this.drawTriangles(fTheta, false, true) //renders road
+        this.drawTriangles(fTheta)       //renders rest of the objects
+        
+        // this.showPath(fTheta)
+        
         // console.log(this.cube.triangles)
         // console.log('here')
     }

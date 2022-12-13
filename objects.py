@@ -1,7 +1,7 @@
 vertices = []
 faces = []
 
-with open('./OpenGlPipelineBased_Webpacked/models/map.obj', encoding = 'utf-8') as f:
+with open('./OpenGlPipelineBased_Webpacked/models/finish_non_cut_rotated.obj', encoding = 'utf-8') as f:
     for line in f:
         if line[0] == 'v':
             line = line.replace('\n', '')

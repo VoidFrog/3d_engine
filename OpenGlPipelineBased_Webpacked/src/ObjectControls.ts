@@ -8,6 +8,8 @@ export default class ObjectControls {
     s:boolean;
     a:boolean;
     d:boolean;
+    gear:string; //change gear LOW||HIGH 
+    breaksOn:boolean; //breaks 
     
     fYawMesh:number;
     unrotatedModel:Mesh;
@@ -19,12 +21,13 @@ export default class ObjectControls {
     MAX_TILT:number;
 
     velocity:Vec3d;
-    MAX_VELOCITY:Vec3d;
     
     acceleration:number;
     MAX_ACCELERATION:number;
+    MAX_VELOCITY:number;
     lastDirection:string;
     accelerationDirection:string;
+    gearAccelerationChange:number;
 
     constructor(engine:Engine3d){
         this.w = false
@@ -44,11 +47,40 @@ export default class ObjectControls {
         this.acceleration = 0
         this.accelerationDirection = ''
         this.MAX_ACCELERATION = 2
+        this.MAX_VELOCITY = 0.5
+        this.gearAccelerationChange = 1
+
+        this.gear = 'LOW'
+        this.breaksOn = false
         
         this.lastDirection = '';
+        this.offsetStartingPosition()
+    }
+
+    offsetStartingPosition(){
+        let vForward = new Vec3d(150, 0, -175)
+        for(let i=0; i<this.engine.playerMesh.triangles.length; i++){
+            for(let j=0; j<3; j++){
+                let currentVector = this.engine.playerMesh.triangles[i].points[j]
+                this.engine.playerMesh.triangles[i].points[j] = Vec3d.add_vectors(currentVector, vForward)
+            }
+        }
+
+        this.distanceFromCenter = Vec3d.add_vectors(this.distanceFromCenter, vForward)
+        this.engine.vCamera = Vec3d.add_vectors(this.engine.vCamera, vForward)
+
+        this.engine.fYaw = -10
+        this.fYawMesh = -10
+        this.setRotation()
     }
 
     move(){
+        //ONLY FOR A LITTLE WHILE 
+        //DELETE LATER
+        this.s = false
+        this.w = true
+
+
         let deltaTime = 30
         let tiltFade = 0.2
         let deceleration = 0.01
@@ -58,9 +90,38 @@ export default class ObjectControls {
         let vLookDirection = Matrix.multiplyMatrixVector(vTarget, cameraRotationY)
         let vForward = Vec3d.mul_vectors(vLookDirection, 8/deltaTime)
         this.currentMovementVector = vForward
-        
-        
         this.velocity = Vec3d.mul_vectors(vForward, this.acceleration)
+        
+        // console.log(this.gear)
+
+        if(this.gear == 'LOW') this.MAX_VELOCITY = 0.3
+        else if(this.gear == 'HIGH')  this.MAX_VELOCITY = 0.5
+        if(this.gear == 'HIGH' && Vec3d.vector_length(this.velocity) > 0.30){
+            this.gearAccelerationChange += 0.02
+            this.gearAccelerationChange = this.gearAccelerationChange > 1.25 ? 1.25 : this.gearAccelerationChange
+        }
+        else if (this.gear == 'HIGH' && Vec3d.vector_length(this.velocity) <= 0.30){
+            this.gearAccelerationChange -= 0.02
+            this.gearAccelerationChange = this.gearAccelerationChange < 0.5 ? 0.5 : this.gearAccelerationChange
+            deceleration = 0.017
+        }
+        else if (this.gear == 'LOW' && Vec3d.vector_length(this.velocity) < 0.3){
+            this.gearAccelerationChange += 0.02
+            this.gearAccelerationChange = this.gearAccelerationChange > 1.25 ? 1.25 : this.gearAccelerationChange
+        }
+        else if (this.gear == 'LOW' && Vec3d.vector_length(this.velocity) >= 0.3){
+            this.gearAccelerationChange -= -0.2
+            this.gearAccelerationChange = this.gearAccelerationChange < 0.75 ? 0.75 : this.gearAccelerationChange
+            deceleration = 0.10
+        }
+
+        this.velocity = Vec3d.mul_vectors(this.velocity, this.gearAccelerationChange)
+        this.applyBreaks()
+
+        if (Vec3d.vector_length(this.velocity) > this.MAX_VELOCITY) {
+            // let div = this.MAX_VELOCITY/Vec3d.vector_length(this.velocity)
+            this.velocity = Vec3d.mul_vectors(this.velocity, 0.999)
+        }
         if(this.w){
             this.acceleration += 0.02
             this.moveForward()       //  this.engine.playerMesh = //Vec3d.add_vectors(this.engine.vCamera, vForward)
@@ -100,6 +161,13 @@ export default class ObjectControls {
         if(this.tilt < -this.MAX_TILT) this.tilt = -this.MAX_TILT
         if(this.tilt != 0) this.tilt = this.tilt > 0 ? Number((this.tilt-tiltFade).toFixed(2)) : Number((this.tilt+tiltFade).toFixed(2))
         this.setRotation()
+    }
+
+    applyBreaks(){
+        if(this.breaksOn){
+            this.acceleration *= 0.95
+            this.velocity = Vec3d.mul_vectors(this.velocity, 0.7)
+        }
     }
 
     setRotation(){
@@ -148,19 +216,27 @@ export default class ObjectControls {
             let key = e.key
             key = key.toLowerCase()
 
+            // console.log(key, this.gear);
+            
+
             if(key == 'w') this.w = true
             if(key == 's') this.s = true
             if(key == 'a') this.a = true
             if(key == 'd') this.d = true
+            if(key == " ") this.breaksOn = true 
+
+            if(key == 'shift' && this.gear == 'LOW') this.gear = 'HIGH'
+            else if(key == 'shift' && this.gear == 'HIGH') this.gear = 'LOW' 
         })
         window.addEventListener('keyup', (e) => {
             let key = e.key
             key = key.toLowerCase()
-            
+
             if(key == 'w') this.w = false
             if(key == 's') this.s = false
             if(key == 'a') this.a = false
             if(key == 'd') this.d = false 
+            if(key == " ") this.breaksOn = false
         })
     }
 }
