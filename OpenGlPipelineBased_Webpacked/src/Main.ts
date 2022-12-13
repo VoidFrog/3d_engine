@@ -56,7 +56,7 @@ function playDemo(){
         let time = Date.now()
         // game.controlsTick() //uses camera and object controls  || comment if you want to move around with camera only
 
-        game.engine.vCamera = Vec3d.add_vectors(new Vec3d(0,10,0), game.botCars[2].positionVector)
+        game.engine.vCamera = Vec3d.add_vectors(new Vec3d(0,3,0), game.botCars[2].positionVector)
         game.engine.fYaw = game.botCars[2].fYawMesh + 90
         game.cameraControls.move(new Vec3d(0,0,0)) //uncomment if you want to move camera around after disabling playerControls
         game.tick(time) //this is basically a render call        
