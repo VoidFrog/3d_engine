@@ -13,13 +13,13 @@ function createPath(vertices:string, lines:string){
     vertices = vertices.replaceAll(']', '')
     vertices = vertices.replaceAll(`'`, '')
     vArray = vertices.split(',')
-    console.log(vArray)
+    //console.log(vArray)
 
     lines = lines.replaceAll('[', '')
     lines = lines.replaceAll(']', '')
     lines = lines.replaceAll(`'`, '')
     lArray = lines.split(',')
-    console.log(lArray)
+    //console.log(lArray)
 
     let path:Vec3d[] = []
     for(let j=0; j<1; j++){
@@ -57,8 +57,8 @@ function createPath(vertices:string, lines:string){
         else return v
     })
 
-    console.log(path)
-    console.log(lArray, 'ordered points')
+    //console.log(path)
+    //console.log(lArray, 'ordered points')
 
     return path
 }

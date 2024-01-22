@@ -75,10 +75,10 @@ export default class ObjectControls {
     }
 
     move(){
-        //ONLY FOR A LITTLE WHILE 
-        //DELETE LATER
-        this.s = false
-        this.w = true
+        // these two lines force you to move forward at all times
+        // so you cannot move backwards
+        // this.s = false
+        // this.w = true
 
 
         let deltaTime = 30

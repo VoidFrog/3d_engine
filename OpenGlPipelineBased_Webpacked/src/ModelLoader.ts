@@ -13,13 +13,13 @@ const f1Model = () => {
     vertices = vertices.replaceAll(']', '')
     vertices = vertices.replaceAll(`'`, '')
     vArray = vertices.split(',')
-    console.log(vArray)
+    //console.log(vArray)
 
     faces = faces.replaceAll('[', '')
     faces = faces.replaceAll(']', '')
     faces = faces.replaceAll(`'`, '')
     fArray = faces.split(',')
-    console.log(fArray)
+    //console.log(fArray)
 
     let vec3dArray:Vec3d[] = []
     let triangles:Triangle[] = []
@@ -39,7 +39,7 @@ const f1Model = () => {
     }
 
     let bolidMesh = new Mesh(triangles)
-    console.log(bolidMesh)
+    //console.log(bolidMesh)
 
     return bolidMesh
 }
@@ -56,13 +56,13 @@ const mountains = () => {
     vertices = vertices.replaceAll(']', '')
     vertices = vertices.replaceAll(`'`, '')
     vArray = vertices.split(',')
-    console.log(vArray)
+    //console.log(vArray)
 
     faces = faces.replaceAll('[', '')
     faces = faces.replaceAll(']', '')
     faces = faces.replaceAll(`'`, '')
     fArray = faces.split(',')
-    console.log(fArray)
+    //console.log(fArray)
 
     let vec3dArray:Vec3d[] = []
     let triangles:Triangle[] = []
@@ -81,7 +81,7 @@ const mountains = () => {
     }
 
     let bolidMesh = new Mesh(triangles)
-    console.log(bolidMesh)
+    //console.log(bolidMesh)
 
     return bolidMesh
 }
@@ -97,13 +97,13 @@ const map = () => {
     vertices = vertices.replaceAll(']', '')
     vertices = vertices.replaceAll(`'`, '')
     vArray = vertices.split(',')
-    console.log(vArray)
+    //console.log(vArray)
 
     faces = faces.replaceAll('[', '')
     faces = faces.replaceAll(']', '')
     faces = faces.replaceAll(`'`, '')
     fArray = faces.split(',')
-    console.log(fArray)
+    //console.log(fArray)
 
     let triangles:Triangle[] = []
     for(let j=0; j<1; j++){
@@ -128,7 +128,7 @@ const map = () => {
     
 
     let map = new Mesh(triangles)
-    console.log(map)
+    //console.log(map)
 
     return map
 }
@@ -144,13 +144,13 @@ const road = () => {
     vertices = vertices.replaceAll(']', '')
     vertices = vertices.replaceAll(`'`, '')
     vArray = vertices.split(',')
-    console.log(vArray)
+    //console.log(vArray)
 
     faces = faces.replaceAll('[', '')
     faces = faces.replaceAll(']', '')
     faces = faces.replaceAll(`'`, '')
     fArray = faces.split(',')
-    console.log(fArray)
+    //console.log(fArray)
 
 
     let min = 0
@@ -179,11 +179,11 @@ const road = () => {
         }
     }
 
-    console.log(min, max, 'z')
+    //console.log(min, max, 'z')
 
 
     let road = new Mesh(triangles)
-    console.log(road)
+    //console.log(road)
 
     return road
 }
@@ -200,13 +200,13 @@ const finish = () => {
     vertices = vertices.replaceAll(']', '')
     vertices = vertices.replaceAll(`'`, '')
     vArray = vertices.split(',')
-    console.log(vArray)
+    //console.log(vArray)
 
     faces = faces.replaceAll('[', '')
     faces = faces.replaceAll(']', '')
     faces = faces.replaceAll(`'`, '')
     fArray = faces.split(',')
-    console.log(fArray)
+    //console.log(fArray)
 
     let triangles:Triangle[] = []
     for(let j=0; j<1; j++){
@@ -231,7 +231,7 @@ const finish = () => {
     
 
     let finish = new Mesh(triangles)
-    console.log(map)
+    //console.log(map)
 
     return finish
 }

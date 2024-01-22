@@ -154,8 +154,8 @@ export default class Engine3d {
             this.cubeX = currentDestination.x - origin.x
             this.cubeZ = currentDestination.z - origin.z
 
-            console.log(posX, this.cubeX, currentDestination.x)
-            console.log(this.pathPoint, path.length-1)
+            //console.log(posX, this.cubeX, currentDestination.x)
+            //console.log(this.pathPoint, path.length-1)
         }
 
         // console.log(this.pathPoint, dx, dz, currentDestination.x, currentDestination.z, Math.round(posX), Math.round(posZ), posX)

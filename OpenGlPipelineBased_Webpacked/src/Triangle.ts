@@ -37,7 +37,7 @@ export default class Triangle {
         }
         else ctx.fillStyle = `rgb(${this.dp*255},${this.dp*255},${this.dp*255})`
 
-        if(this.dp == 0) console.log(this.dp, 'o kurwa zero')
+        if(this.dp == 0) console.log(this.dp, 'dotproduct = 0 ')
         
         ctx.beginPath()
         ctx.moveTo(this.points[2].x, this.points[2].y)
